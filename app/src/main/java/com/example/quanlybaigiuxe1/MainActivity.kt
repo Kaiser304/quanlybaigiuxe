@@ -54,7 +54,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.cardThongKe.setOnClickListener {
-            openFeature("THỐNG KÊ")
+            val intent = Intent(this, ThongKeActivity::class.java)
+            startActivity(intent)
         }
 
         // ĐOẠN CODE LƯU XE MẪU CŨ ĐÃ ĐƯỢC XÓA TẠI ĐÂY

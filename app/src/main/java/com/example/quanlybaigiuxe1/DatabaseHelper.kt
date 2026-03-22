@@ -152,4 +152,90 @@ class DatabaseHelper(context: Context) :
         // Chèn dữ liệu vào bảng Ticket
         return db.insert("Ticket", null, values)
     }
+    // =======================================================
+    // ======== CÁC HÀM DÀNH CHO CHỨC NĂNG THỐNG KÊ ==========
+    // =======================================================
+
+    /**
+     * 1. Thống kê tổng doanh thu (Tổng tất cả tiền vé của xe ĐÃ RA)
+     */
+    fun getTongDoanhThu(): Int {
+        val db = this.readableDatabase
+        var total = 0
+        // Lấy tổng cột price của những vé có status = 0 (đã thanh toán)
+        val cursor = db.rawQuery("SELECT SUM(price) FROM Ticket WHERE status = 0", null)
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
+
+    /**
+     * 2. Thống kê doanh thu theo ngày cụ thể
+     * (Lưu ý: Truyền vào date theo đúng định dạng bạn đang lưu, ví dụ: "15-10-2023")
+     */
+    fun getDoanhThuTheoNgay(date: String): Int {
+        val db = this.readableDatabase
+        var total = 0
+        // Dùng từ khóa LIKE để tìm các vé có thời gian ra (time_out) chứa chuỗi ngày đó
+        val cursor = db.rawQuery(
+            "SELECT SUM(price) FROM Ticket WHERE status = 0 AND time_out LIKE ?",
+            arrayOf("%$date%")
+        )
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
+
+    /**
+     * 3. Thống kê tổng số xe HIỆN ĐANG TRONG BÃI (Tất cả các loại xe)
+     */
+    fun getTongXeDangTrongBai(): Int {
+        val db = this.readableDatabase
+        var count = 0
+        // Đếm số lượng vé có status = 1
+        val cursor = db.rawQuery("SELECT COUNT(id) FROM Ticket WHERE status = 1", null)
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0)
+        }
+        cursor.close()
+        return count
+    }
+
+    /**
+     * 4. Thống kê tổng lượt xe ĐÃ PHỤC VỤ (Đã ra khỏi bãi)
+     */
+    fun getTongLuotXeDaRa(): Int {
+        val db = this.readableDatabase
+        var count = 0
+        // Đếm số lượng vé có status = 0
+        val cursor = db.rawQuery("SELECT COUNT(id) FROM Ticket WHERE status = 0", null)
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0)
+        }
+        cursor.close()
+        return count
+    }
+    /**
+     * 5. Thống kê doanh thu theo loại xe (Xe máy / Ô tô)
+     */
+    fun getDoanhThuTheoLoaiXe(loaiXe: String): Int {
+        val db = this.readableDatabase
+        var total = 0
+        // Lấy tổng tiền (price) của xe ĐÃ RA (status = 0) và có loại xe khớp với tham số truyền vào
+        val cursor = db.rawQuery(
+            "SELECT SUM(price) FROM Ticket WHERE status = 0 AND type = ?",
+            arrayOf(loaiXe)
+        )
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
+
+
 }

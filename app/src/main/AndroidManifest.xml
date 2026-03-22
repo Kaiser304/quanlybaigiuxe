@@ -13,6 +13,13 @@
         android:theme="@style/Theme.quanlybaigiuxe1">
 
         <activity
+            android:name=".ThongKeActivity"
+            android:exported="false" />
+        <!--        <activity-->
+        <!--           // android:name=".VehicleInActivity"-->
+        <!--            android:exported="false" />-->
+
+        <activity
             android:name=".DanhSachXeActivity"
             android:exported="false" />
         <activity
