@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">QUẢN LÝ BÃI GIỮ XE</string>
+    <string name="title_app">Quản lý bãi giữ xe</string>
+    <string name="xe_vao">Xe vào</string>
+    <string name="xe_ra">Xe ra</string>
+    <string name="danh_sach_xe">Danh sách xe</string>
+    <string name="thong_ke">Thống kê</string>
+    <string name="logout">Đăng xuất</string>
+
+
+</resources>
