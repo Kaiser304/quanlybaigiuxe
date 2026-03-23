@@ -132,7 +132,7 @@ class DatabaseHelper(context: Context) :
         cursor.close()
         return count
     }
-    fun insertVehicle(plate: String, type: String, timeIn: String, cardId: String, statusString: String): Long {
+    fun insertVehicle(plate: String, type: String, timeIn: String, statusString: String): Long {
         val db = this.writableDatabase
         val values = ContentValues()
 
@@ -152,9 +152,6 @@ class DatabaseHelper(context: Context) :
         // Chèn dữ liệu vào bảng Ticket
         return db.insert("Ticket", null, values)
     }
-    // =======================================================
-    // ======== CÁC HÀM DÀNH CHO CHỨC NĂNG THỐNG KÊ ==========
-    // =======================================================
 
     /**
      * 1. Thống kê tổng doanh thu (Tổng tất cả tiền vé của xe ĐÃ RA)

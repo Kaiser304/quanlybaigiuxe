@@ -41,10 +41,10 @@ class VehicleInActivity : AppCompatActivity() {
         binding.btnLuu.setOnClickListener {
             val bienSo = binding.edtBienSo.text.toString().trim()
             val loaiXe = binding.edtLoaiXe.text.toString().trim()
-            val cardId = binding.edtCardId.text.toString().trim()
+            //val cardId = binding.edtCardId.text.toString().trim()
 
 
-            if (bienSo.isEmpty() || loaiXe.isEmpty() || cardId.isEmpty()) {
+            if (bienSo.isEmpty() || loaiXe.isEmpty()) {
                 Toast.makeText(this, "Vui lòng nhập đầy đủ", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -54,7 +54,7 @@ class VehicleInActivity : AppCompatActivity() {
             val realTimeIn = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
 
 
-            val result = db.insertVehicle(bienSo, loaiXe, realTimeIn, cardId, "IN")
+            val result = db.insertVehicle(bienSo, loaiXe, realTimeIn,"IN")
 
 
             if (result != -1L) {
@@ -77,6 +77,6 @@ class VehicleInActivity : AppCompatActivity() {
     private fun clearForm() {
         binding.edtBienSo.setText("")
         binding.edtLoaiXe.setText("")
-        binding.edtCardId.setText("")
+        //binding.edtCardId.setText("")
     }
 }

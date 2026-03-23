@@ -20,9 +20,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:background="@android:color/white"
-        android:queryHint="Nhập biển số để tìm..."
-        android:iconifiedByDefault="false" />
+        android:background="@drawable/bg_search_view"
+        android:queryHint="Nhập biển số... Vd:67K1-123.45"
+        android:iconifiedByDefault="false"/>
 
     <FrameLayout
         android:layout_width="match_parent"
