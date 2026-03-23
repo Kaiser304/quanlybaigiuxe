@@ -38,16 +38,16 @@ class ThongKeActivity : AppCompatActivity() {
         tvSoXeTrongBai.text = "Tổng số xe trong bãi: $tongXeTrongBai chiếc"
 
         val soXeMay = dbHelper.getOccupiedCountByType("Xe máy")
-        tvSoXeMayTrongBai.text = " - Xe máy: $soXeMay chiếc"
+        tvSoXeMayTrongBai.text = "  Xe máy: $soXeMay chiếc"
 
         val soOTo = dbHelper.getOccupiedCountByType("Ô tô")
-        tvSoOtoTrongBai.text = " - Ô tô: $soOTo chiếc"
+        tvSoOtoTrongBai.text = "  Ô tô: $soOTo chiếc"
 
         // --- B. XỬ LÝ NHÓM DOANH THU ---
         val tongDoanhThu = dbHelper.getTongDoanhThu()
         tvTongDoanhThu.text = "Tổng doanh thu: $tongDoanhThu VNĐ"
 
-        val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+        val sdf = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
         val ngayHomNay = sdf.format(Date())
         val doanhThuHomNay = dbHelper.getDoanhThuTheoNgay(ngayHomNay)
         tvDoanhThuHomNay.text = "Hôm nay ($ngayHomNay): $doanhThuHomNay VNĐ"
