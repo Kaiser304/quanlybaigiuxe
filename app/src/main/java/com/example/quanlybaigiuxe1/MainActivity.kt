@@ -2,9 +2,15 @@ package com.example.quanlybaigiuxe1
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.AnimationUtils
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.ViewSwitcher
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.quanlybaigiuxe1.databinding.ActivityMainBinding
@@ -20,6 +26,12 @@ class MainActivity : AppCompatActivity() {
     private val MAX_XE_MAY = 100
     private val MAX_OTO = 50
 
+    private var currentBannerIndex = 0
+    private val banners = intArrayOf(R.drawable.banner1, R.drawable.banner2, R.drawable.banner3)
+
+    private val autoScrollHandler = Handler(Looper.getMainLooper())
+    private lateinit var autoScrollRunnable: Runnable
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -28,18 +40,55 @@ class MainActivity : AppCompatActivity() {
 
         dbHelper = DatabaseHelper(this)
 
-        // Lấy tên đăng nhập từ Intent
         username = intent.getStringExtra("USERNAME") ?: "admin"
 
-        // Phân quyền: Nếu là nhân viên (staff) thì ẩn nút Thống kê
         if (username == "staff") {
             binding.cardThongKe.visibility = View.GONE
         }
 
-        // --- CÁC SỰ KIỆN CLICK ---
+        // --- LOGIC BANNER QUẢNG CÁO TỰ ĐỘNG CÓ HIỆU ỨNG ---
+        binding.imgBannerSwitcher.setFactory {
+            val imageView = ImageView(applicationContext)
+            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+            imageView.layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            imageView
+        }
 
+        binding.imgBannerSwitcher.inAnimation = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
+        binding.imgBannerSwitcher.outAnimation = AnimationUtils.loadAnimation(this, android.R.anim.fade_out)
+
+        // Đặt tấm đầu tiên
+        binding.imgBannerSwitcher.setImageResource(banners[currentBannerIndex])
+
+        val moveToNextBanner = {
+            currentBannerIndex = (currentBannerIndex + 1) % banners.size
+            binding.imgBannerSwitcher.setImageResource(banners[currentBannerIndex])
+        }
+
+        autoScrollRunnable = Runnable {
+            moveToNextBanner()
+            autoScrollHandler.postDelayed(autoScrollRunnable, 3000)
+        }
+
+        // TAO ĐÃ XÓA CÁI ĐỒNG HỒ DƯ THỪA Ở ĐÂY RỒI
+
+        binding.btnBannerLeft.setOnClickListener {
+            currentBannerIndex = if (currentBannerIndex - 1 < 0) banners.size - 1 else currentBannerIndex - 1
+            binding.imgBannerSwitcher.setImageResource(banners[currentBannerIndex])
+            resetAutoScroll()
+        }
+
+        binding.btnBannerRight.setOnClickListener {
+            moveToNextBanner()
+            resetAutoScroll()
+        }
+        // ---------------------------------------------
+
+        // --- CÁC SỰ KIỆN CLICK ---
         binding.cardXeVao.setOnClickListener {
-            // Mở màn hình Gửi xe chuyên dụng bạn mới copy vào
             val intent = Intent(this, VehicleInActivity::class.java)
             startActivity(intent)
         }
@@ -57,11 +106,30 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ThongKeActivity::class.java)
             startActivity(intent)
         }
-
-        // ĐOẠN CODE LƯU XE MẪU CŨ ĐÃ ĐƯỢC XÓA TẠI ĐÂY
     }
 
-    // Hàm cập nhật số chỗ trống dựa trên dữ liệu thật trong DB
+    private fun resetAutoScroll() {
+        autoScrollHandler.removeCallbacks(autoScrollRunnable)
+        autoScrollHandler.postDelayed(autoScrollRunnable, 3000)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        autoScrollHandler.removeCallbacks(autoScrollRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        autoScrollHandler.removeCallbacks(autoScrollRunnable)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateAvailableSlots()
+        // Chỉ dùng duy nhất 1 đồng hồ chạy lúc app mở lên màn hình
+        resetAutoScroll()
+    }
+
     private fun updateAvailableSlots() {
         val occupiedXeMay = dbHelper.getOccupiedCountByType("Xe máy")
         val occupiedOto = dbHelper.getOccupiedCountByType("Ô tô")
@@ -69,19 +137,11 @@ class MainActivity : AppCompatActivity() {
         val availableXeMay = MAX_XE_MAY - occupiedXeMay
         val availableOto = MAX_OTO - occupiedOto
 
-        // Hiển thị lên Header
         binding.tvXeMayStatus.text = "Xe máy trống: ${if(availableXeMay < 0) 0 else availableXeMay} / $MAX_XE_MAY"
         binding.tvOtoStatus.text = "Ô tô trống: ${if(availableOto < 0) 0 else availableOto} / $MAX_OTO"
 
-        // Đổi màu cảnh báo nếu sắp hết chỗ
         binding.tvXeMayStatus.setTextColor(if (availableXeMay < 5) android.graphics.Color.RED else android.graphics.Color.WHITE)
         binding.tvOtoStatus.setTextColor(if (availableOto < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#FFEB3B"))
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Mỗi khi từ màn hình Gửi xe/Lấy xe quay về, số chỗ trống sẽ tự cập nhật
-        updateAvailableSlots()
     }
 
     private fun showInputPlateDialog() {
@@ -112,15 +172,12 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    // --- CÀI ĐẶT MENU ---
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        // Hiển thị tên người dùng đang đăng nhập lên Menu
         val menuItem = menu.findItem(R.id.menu_user)
         menuItem?.actionView?.let {
             it.findViewById<TextView>(R.id.tvUsername)?.text = username
