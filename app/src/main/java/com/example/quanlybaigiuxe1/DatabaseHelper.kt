@@ -246,6 +246,82 @@ class DatabaseHelper(context: Context) :
         cursor.close()
         return total
     }
+    // Thêm/Sửa các hàm này trong DatabaseHelper.kt
+
+    /**
+     * Lấy doanh thu dựa trên loại xe và mẫu thời gian (Ngày hoặc Tháng)
+     * @param loaiXe: "Xe máy", "Ô tô" hoặc null (nếu tính tổng)
+     * @param datePattern: Ví dụ "24/03/26" (Ngày) hoặc "/03/26" (Tháng)
+     */
+    fun getDoanhThuFiltered(loaiXe: String?, datePattern: String): Int {
+        val db = this.readableDatabase
+        var total = 0
+        val query: String
+        val args: Array<String>
+
+        if (loaiXe == null) {
+            // Tổng doanh thu theo thời gian
+            query = "SELECT SUM(price) FROM Ticket WHERE status = 0 AND time_out LIKE ?"
+            args = arrayOf("%$datePattern%")
+        } else {
+            // Doanh thu theo loại xe + thời gian
+            query = "SELECT SUM(price) FROM Ticket WHERE status = 0 AND type = ? AND time_out LIKE ?"
+            args = arrayOf(loaiXe, "%$datePattern%")
+        }
+
+        val cursor = db.rawQuery(query, args)
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
+
+    /**
+     * Đếm số lượt xe đã phục vụ theo mẫu thời gian
+     */
+    fun getTongLuotXeTheoThoiGian(datePattern: String): Int {
+        val db = this.readableDatabase
+        var count = 0
+        val cursor = db.rawQuery(
+            "SELECT COUNT(id) FROM Ticket WHERE status = 0 AND time_out LIKE ?",
+            arrayOf("%$datePattern%")
+        )
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0)
+        }
+        cursor.close()
+        return count
+    }
+    // 1. Hàm tính TỔNG doanh thu theo khoảng thời gian (Ngày/Tháng)
+    fun getTongDoanhThuTheoThoiGian(datePattern: String): Int {
+        val db = this.readableDatabase
+        var total = 0
+        val cursor = db.rawQuery(
+            "SELECT SUM(price) FROM Ticket WHERE status = 0 AND time_out LIKE ?",
+            arrayOf("%$datePattern%")
+        )
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
+
+    // 2. Hàm tính doanh thu THEO LOẠI XE theo khoảng thời gian
+    fun getDoanhThuLoaiXeTheoThoiGian(loaiXe: String, datePattern: String): Int {
+        val db = this.readableDatabase
+        var total = 0
+        val cursor = db.rawQuery(
+            "SELECT SUM(price) FROM Ticket WHERE status = 0 AND type = ? AND time_out LIKE ?",
+            arrayOf(loaiXe, "%$datePattern%")
+        )
+        if (cursor.moveToFirst()) {
+            total = cursor.getInt(0)
+        }
+        cursor.close()
+        return total
+    }
 
 
 }
