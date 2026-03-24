@@ -10,13 +10,14 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.ViewSwitcher
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.quanlybaigiuxe1.databinding.ActivityMainBinding
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import android.widget.Toast
+import android.widget.ImageButton
+import androidx.appcompat.widget.PopupMenu
 
 class MainActivity : AppCompatActivity() {
 
@@ -106,6 +107,46 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ThongKeActivity::class.java)
             startActivity(intent)
         }
+        val btnMenuHeader = findViewById<ImageButton>(R.id.btnMenuHeader)
+
+        btnMenuHeader.setOnClickListener { view: View ->
+            val popup = PopupMenu(this, view)
+            // Thêm mục "Đăng xuất" vào menu
+            popup.menu.add("Đăng xuất")
+
+            // Xử lý khi người dùng chọn "Đăng xuất"
+            popup.setOnMenuItemClickListener { item ->
+                if (item.title == "Đăng xuất") {
+                    performLogout()
+                }
+                true
+            }
+            popup.show()
+        }
+
+        //lấy tên user đăng nhập để hiển thị
+        if (username.isNotEmpty() && username != "admin" && username != "staff") {
+            val nameFromDb = dbHelper.getUserName(username) // Truy vấn bằng 'username'
+            binding.tvUserName.text = nameFromDb
+        } else if (username == "admin" || username == "staff") {
+            binding.tvUserName.text = username.uppercase() // Hiện luôn chữ ADMIN hoặc STAFF
+        } else {
+            binding.tvUserName.text = "Khách"
+        }
+
+    }
+    //HÀM ĐĂNG XUẤT
+    private fun performLogout() {
+        // Thông báo cho người dùng
+        Toast.makeText(this, "Đã đăng xuất thành công!", Toast.LENGTH_SHORT).show()
+
+        // Chuyển hướng về màn hình Đăng nhập (LoginActivity)
+        val intent = Intent(this, LoginActivity::class.java)
+        // Xóa sạch lịch sử các màn hình trước đó để người dùng không bấm "Back" quay lại được
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        startActivity(intent)
+        finish()
     }
 
     private fun resetAutoScroll() {
@@ -137,10 +178,10 @@ class MainActivity : AppCompatActivity() {
         val availableXeMay = MAX_XE_MAY - occupiedXeMay
         val availableOto = MAX_OTO - occupiedOto
 
-        binding.tvXeMayStatus.text = "Xe máy trống: ${if(availableXeMay < 0) 0 else availableXeMay} / $MAX_XE_MAY"
-        binding.tvOtoStatus.text = "Ô tô trống: ${if(availableOto < 0) 0 else availableOto} / $MAX_OTO"
+        binding.tvXeMayStatus.text = ": ${if(availableXeMay < 0) 0 else availableXeMay} / $MAX_XE_MAY"
+        binding.tvOtoStatus.text = ": ${if(availableOto < 0) 0 else availableOto} / $MAX_OTO"
 
-        binding.tvXeMayStatus.setTextColor(if (availableXeMay < 5) android.graphics.Color.RED else android.graphics.Color.WHITE)
+        binding.tvXeMayStatus.setTextColor(if (availableXeMay < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#4898EF"))
         binding.tvOtoStatus.setTextColor(if (availableOto < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#FFEB3B"))
     }
 

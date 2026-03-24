@@ -61,6 +61,19 @@ class DatabaseHelper(context: Context) :
         onCreate(db)
     }
 
+    fun getUserName(loggedInUser: String): String {
+        val db = this.readableDatabase
+        var name = "User"
+        // Thêm điều kiện WHERE để lọc đúng user
+        val cursor = db.rawQuery("SELECT username FROM User WHERE username = ?", arrayOf(loggedInUser))
+
+        if (cursor.moveToFirst()) {
+            name = cursor.getString(0)
+        }
+        cursor.close()
+        return name
+    }
+
     fun getTicketByPlate(plate: String): Ticket? {
         val db = this.readableDatabase
         val cursor = db.rawQuery("SELECT * FROM Ticket WHERE plate = ? AND status = 1", arrayOf(plate))
