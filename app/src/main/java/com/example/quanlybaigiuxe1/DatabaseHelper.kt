@@ -181,10 +181,8 @@ class DatabaseHelper(context: Context) :
         return total
     }
 
-    /**
-     * 2. Thống kê doanh thu theo ngày cụ thể
-     * (Lưu ý: Truyền vào date theo đúng định dạng bạn đang lưu, ví dụ: "15-10-2023")
-     */
+//      Thống kê doanh thu theo ngày cụ thể
+
     fun getDoanhThuTheoNgay(date: String): Int {
         val db = this.readableDatabase
         var total = 0
@@ -229,9 +227,9 @@ class DatabaseHelper(context: Context) :
         cursor.close()
         return count
     }
-    /**
-     * 5. Thống kê doanh thu theo loại xe (Xe máy / Ô tô)
-     */
+
+     // Thống kê doanh thu theo loại xe
+
     fun getDoanhThuTheoLoaiXe(loaiXe: String): Int {
         val db = this.readableDatabase
         var total = 0
@@ -246,13 +244,13 @@ class DatabaseHelper(context: Context) :
         cursor.close()
         return total
     }
-    // Thêm/Sửa các hàm này trong DatabaseHelper.kt
 
-    /**
-     * Lấy doanh thu dựa trên loại xe và mẫu thời gian (Ngày hoặc Tháng)
-     * @param loaiXe: "Xe máy", "Ô tô" hoặc null (nếu tính tổng)
-     * @param datePattern: Ví dụ "24/03/26" (Ngày) hoặc "/03/26" (Tháng)
-     */
+
+
+         //Lấy doanh thu dựa trên loại xe và mẫu thời gian (Ngày hoặc Tháng)
+        //@param loaiXe: "Xe máy", "Ô tô" hoặc null (nếu tính tổng)
+        //@param datePattern: Ví dụ "24/03/26" (Ngày) hoặc "/03/26" (Tháng)
+
     fun getDoanhThuFiltered(loaiXe: String?, datePattern: String): Int {
         val db = this.readableDatabase
         var total = 0

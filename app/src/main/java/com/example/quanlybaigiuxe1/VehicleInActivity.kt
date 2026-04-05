@@ -123,8 +123,6 @@ class VehicleInActivity : AppCompatActivity() {
 
     private fun saveVehicleData() {
         val plate = binding.edtBienSo.text.toString().trim()
-
-        // Sửa lỗi rbXeMay: Kiểm tra RadioButton thay vì lấy text từ EditText cũ
         val type = if (binding.rbXeMay.isChecked) "Xe máy" else "Ô tô"
 
         if (plate.isEmpty()) {

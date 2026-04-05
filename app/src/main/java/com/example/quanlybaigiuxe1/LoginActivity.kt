@@ -33,18 +33,18 @@ class LoginActivity : AppCompatActivity() {
                 "SELECT * FROM User WHERE username=? AND password=?",
                 arrayOf(username, password)
             )
-                if (cursor.moveToFirst()) {
-                    Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
+            if (cursor.moveToFirst()) {
+                Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
 
-                    // chuyển sang màn hình chính
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.putExtra("USERNAME", username)
-                    startActivity(intent)
-                    finish()
-                } else {
-                    Toast.makeText(this, "Sai tài khoản hoặc mật khẩu", Toast.LENGTH_SHORT).show()
-                }
-                 cursor.close()
+                // chuyển sang màn hình chính
+                val intent = Intent(this, MainActivity::class.java)
+                intent.putExtra("USERNAME", username)
+                startActivity(intent)
+                finish()
+            } else {
+                Toast.makeText(this, "Sai tài khoản hoặc mật khẩu", Toast.LENGTH_SHORT).show()
+            }
+            cursor.close()
 
 //            // Login giả (chưa DB)
 //            if ((username == "admin" && password == "123") || (username == "staff" && password == "456")) {

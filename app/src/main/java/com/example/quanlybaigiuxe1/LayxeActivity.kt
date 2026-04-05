@@ -37,6 +37,7 @@ class LayxeActivity : AppCompatActivity() {
         if (ticket != null) {
             binding.tvBienSo.text = ticket.plate
             binding.tvGioVao.text = ticket.time_in
+            binding.tvLoaiXe.text = ticket.type
 
             val sdf = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
             val dateRa = Date()
@@ -59,7 +60,8 @@ class LayxeActivity : AppCompatActivity() {
                 else (diffMinutes / 60.0).let { Math.ceil(it).toLong() }
 
                 // SỬA TẠI ĐÂY: Lưu giá tiền vào biến toàn cục
-                finalPrice = (hoursToCharge * 5000).toInt()
+                var giatienduavaotypexe = if(ticket.type == "Xe máy") 5000 else 15000
+                finalPrice = (hoursToCharge * giatienduavaotypexe).toInt()
 
                 binding.tvGiaTien.text = String.format("%,d", finalPrice)
             } catch (e: Exception) {
