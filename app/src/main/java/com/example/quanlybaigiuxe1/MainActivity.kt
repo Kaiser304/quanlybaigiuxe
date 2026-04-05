@@ -125,13 +125,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         //lấy tên user đăng nhập để hiển thị
-        if (username.isNotEmpty() && username != "admin" && username != "staff") {
+        if (username.isNotEmpty() ) {
             val nameFromDb = dbHelper.getUserName(username) // Truy vấn bằng 'username'
             binding.tvUserName.text = nameFromDb
-        } else if (username == "admin" || username == "staff") {
-            binding.tvUserName.text = username.uppercase() // Hiện luôn chữ ADMIN hoặc STAFF
-        } else {
-            binding.tvUserName.text = "Khách"
         }
 
     }
@@ -184,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvXeMayStatus.setTextColor(if (availableXeMay < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#4898EF"))
         binding.tvOtoStatus.setTextColor(if (availableOto < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#FFEB3B"))
     }
-
+     //HIỆN RA BẢNG NHẬP BỂN SỐ XE CẦN LẤY
     private fun showInputPlateDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Nhập biển số xe cần lấy")
@@ -207,11 +203,11 @@ class MainActivity : AppCompatActivity() {
         builder.show()
     }
 
-    private fun openFeature(title: String) {
-        val intent = Intent(this, FeatureActivity::class.java)
-        intent.putExtra("title", title)
-        startActivity(intent)
-    }
+//    private fun openFeature(title: String) {
+//        val intent = Intent(this, FeatureActivity::class.java)
+//        intent.putExtra("title", title)
+//        startActivity(intent)
+//    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)

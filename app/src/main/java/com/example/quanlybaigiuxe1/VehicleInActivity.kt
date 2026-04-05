@@ -111,7 +111,7 @@ class VehicleInActivity : AppCompatActivity() {
                         val regex = Regex("[0-9]{2}[A-Z][0-9]{1,2}[0-9]{4,5}")
                         if (regex.containsMatchIn(textRaw)) {
                             val plate = regex.find(textRaw)?.value ?: ""
-                            binding.edtBienSo.setText(plate) // ID edtPlate khớp với XML tui đã sửa
+                            binding.edtBienSo.setText(plate)
                             stopCamera()
                             break
                         }
