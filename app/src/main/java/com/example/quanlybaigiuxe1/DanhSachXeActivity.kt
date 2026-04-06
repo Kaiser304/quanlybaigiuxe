@@ -70,25 +70,31 @@ class DanhSachXeActivity : AppCompatActivity() {
     private fun loadDanhSachXe() {
         danhSachGoc.clear()
         val db = dbHelper.readableDatabase
+
+        // Truy vấn bảng Ticket
         val cursor: Cursor = db.rawQuery("SELECT * FROM Ticket WHERE status = 1", null)
 
         if (cursor.moveToFirst()) {
             do {
+                // Lấy ID cột an toàn bằng getColumnIndex
                 val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
                 val bienSo = cursor.getString(cursor.getColumnIndexOrThrow("plate")) ?: ""
                 val loaiXe = cursor.getString(cursor.getColumnIndexOrThrow("type")) ?: "Không rõ"
                 val gioVao = cursor.getString(cursor.getColumnIndexOrThrow("time_in")) ?: ""
 
-                danhSachGoc.add(Xe(id, bienSo, loaiXe, gioVao))
+                // Vì Database chưa có cột ảnh, ta để trống hoặc dùng ảnh mặc định
+                val hinhAnh = ""
+
+                danhSachGoc.add(Xe(id, bienSo, loaiXe, gioVao, hinhAnh))
             } while (cursor.moveToNext())
         }
         cursor.close()
 
         xeAdapter.updateData(danhSachGoc)
 
+        // Hiển thị thông báo nếu bãi trống
         if (danhSachGoc.isEmpty()) {
             tvKhongCoXe.visibility = View.VISIBLE
-            tvKhongCoXe.text = "Không có xe nào trong bãi"
             recyclerView.visibility = View.GONE
         } else {
             tvKhongCoXe.visibility = View.GONE

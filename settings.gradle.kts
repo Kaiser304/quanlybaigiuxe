@@ -11,14 +11,15 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+        maven(url = "https://jitpack.io") // ✅ đúng cú pháp Kotlin
     }
 }
 
 rootProject.name = "quanlybaigiuxe1"
-include(":app")
- 
+include(":app") // ✅ Kotlin DSL dùng dạng này

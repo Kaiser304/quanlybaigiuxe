@@ -1,9 +1,18 @@
 package com.example.quanlybaigiuxe1
 
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
 import com.example.quanlybaigiuxe1.databinding.ActivityLayxeBinding
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -11,9 +20,9 @@ class LayxeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLayxeBinding
     private lateinit var dbHelper: DatabaseHelper
 
-    // Đã có sẵn 2 biến này để lưu kết quả tính toán
     private var finalPrice: Int = 0
     private var finalTimeOut: String = ""
+    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,65 +31,144 @@ class LayxeActivity : AppCompatActivity() {
 
         dbHelper = DatabaseHelper(this)
 
-        val bienSo = intent.getStringExtra("BIEN_SO") ?: ""
-        loadThongTinXe(bienSo)
+        // 1. TỰ ĐỘNG MỞ CAMERA NGAY KHI VÀO MÀN HÌNH
+        startCamera()
 
         binding.btnBack.setOnClickListener { finish() }
 
+        // Nút quét lại (phòng trường hợp người dùng lỡ tay đóng camera)
+        binding.btnScan.setOnClickListener {
+            startCamera()
+        }
+
         binding.btnThanhToan.setOnClickListener {
-            thanhToanXeRa(bienSo)
+            val currentPlate = binding.tvBienSo.text.toString()
+            // Kiểm tra xem đã quét được biển số hợp lệ chưa
+            if (currentPlate.isNotEmpty() && currentPlate != "QUÉT BIỂN SỐ" && finalPrice > 0) {
+                thanhToanXeRa(currentPlate)
+            } else {
+                Toast.makeText(this, "Vui lòng quét biển số xe trong bãi trước!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
-    private fun loadThongTinXe(bienSo: String) {
-        val ticket = dbHelper.getTicketByPlate(bienSo)
-        if (ticket != null) {
-            binding.tvBienSo.text = ticket.plate
-            binding.tvGioVao.text = ticket.time_in
-            binding.tvLoaiXe.text = ticket.type
+    // region --- QUẢN LÝ CAMERA ---
 
-            val sdf = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
-            val dateRa = Date()
+    private fun startCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
+            }
 
-            // SỬA TẠI ĐÂY: Lưu giờ ra vào biến toàn cục để tí nữa lưu DB
-            finalTimeOut = sdf.format(dateRa)
-            binding.tvGioRa.text = finalTimeOut
+            val imageAnalyzer = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build()
+                .also {
+                    it.setAnalyzer(ContextCompat.getMainExecutor(this)) { imageProxy ->
+                        processImageProxy(imageProxy)
+                    }
+                }
 
             try {
-                val dateVao = sdf.parse(ticket.time_in)!!
-                val diff = dateRa.time - dateVao.time
-
-                val diffMinutes = diff / (1000 * 60)
-                val diffHours = diffMinutes / 60
-
-                binding.tvTongThoiGian.text = "${diffHours}h ${diffMinutes % 60}m"
-
-                // Tính tiền
-                val hoursToCharge = if (diffMinutes < 60) 1
-                else (diffMinutes / 60.0).let { Math.ceil(it).toLong() }
-
-                // SỬA TẠI ĐÂY: Lưu giá tiền vào biến toàn cục
-                var giatienduavaotypexe = if(ticket.type == "Xe máy") 5000 else 15000
-                finalPrice = (hoursToCharge * giatienduavaotypexe).toInt()
-
-                binding.tvGiaTien.text = String.format("%,d", finalPrice)
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalyzer)
+                binding.viewFinder.visibility = View.VISIBLE
             } catch (e: Exception) {
-                binding.tvTongThoiGian.text = "Lỗi tính toán"
+                Log.e("CameraX", "Lỗi khởi động: ${e.message}")
             }
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun stopCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProvider = cameraProviderFuture.get()
+        cameraProvider.unbindAll()
+        binding.viewFinder.visibility = View.GONE
+    }
+
+    @OptIn(ExperimentalGetImage::class)
+    private fun processImageProxy(imageProxy: ImageProxy) {
+        val mediaImage = imageProxy.image
+        if (mediaImage != null) {
+            val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+
+            recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    for (block in visionText.textBlocks) {
+                        // Làm sạch chuỗi: CHỈ lấy Chữ và Số (Xóa dấu cách, gạch ngang, chấm)
+                        val textRaw = block.text.uppercase().replace(Regex("[^A-Z0-9]"), "")
+
+                        // Regex linh hoạt: 2 số - 1 hoặc 2 chữ - 4 đến 6 số
+                        val regex = Regex("[0-9]{2}[A-Z]{1,2}[0-9]{4,6}")
+
+                        if (regex.containsMatchIn(textRaw)) {
+                            val plate = regex.find(textRaw)?.value ?: ""
+
+                            // KIỂM TRA TRONG DATABASE: Có xe này đang gửi không?
+                            val ticket = dbHelper.getTicketByPlate(plate)
+
+                            if (ticket != null) {
+                                // TÌM THẤY -> Cập nhật UI và dừng Camera
+                                runOnUiThread {
+                                    displayVehicleInfo(ticket)
+                                    stopCamera()
+                                }
+                                break
+                            }
+                            // Nếu không thấy ticket, camera tiếp tục quét khung hình tiếp theo tự động
+                        }
+                    }
+                }
+                .addOnCompleteListener { imageProxy.close() }
         } else {
-            Toast.makeText(this, "Không tìm thấy xe trong bãi!", Toast.LENGTH_SHORT).show()
-            finish()
+            imageProxy.close()
+        }
+    }
+    // endregion
+
+    // region --- XỬ LÝ NGHIỆP VỤ ---
+
+    private fun displayVehicleInfo(ticket: Ticket) {
+        binding.tvBienSo.text = ticket.plate
+        binding.tvGioVao.text = ticket.time_in
+        binding.tvLoaiXe.text = ticket.type
+
+        val sdf = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+        val dateRa = Date()
+        finalTimeOut = sdf.format(dateRa)
+        binding.tvGioRa.text = finalTimeOut
+
+        try {
+            val dateVao = sdf.parse(ticket.time_in)!!
+            val diff = dateRa.time - dateVao.time
+            val diffMinutes = diff / (1000 * 60)
+
+            // Hiển thị tổng thời gian gửi
+            binding.tvTongThoiGian.text = "${diffMinutes / 60}h ${diffMinutes % 60}m"
+
+            // Tính tiền: Làm tròn lên theo giờ (Dưới 1 tiếng tính 1 tiếng)
+            val hoursToCharge = if (diffMinutes < 60) 1 else Math.ceil(diffMinutes / 60.0).toLong()
+            val pricePerUnit = if(ticket.type == "Xe máy") 5000 else 15000
+            finalPrice = (hoursToCharge * pricePerUnit).toInt()
+
+            // Hiển thị giá tiền định dạng 10,000 VNĐ
+            binding.tvGiaTien.text = String.format("%,d VNĐ", finalPrice)
+        } catch (e: Exception) {
+            Log.e("Calculation", "Lỗi tính tiền: ${e.message}")
+            binding.tvGiaTien.text = "Lỗi tính toán"
         }
     }
 
     private fun thanhToanXeRa(bienSo: String) {
-        // SỬA TẠI ĐÂY: Truyền thêm giờ ra và giá tiền vào hàm update
         val success = dbHelper.updateStatusXeRa(bienSo, finalTimeOut, finalPrice)
         if (success) {
             Toast.makeText(this, "Thanh toán thành công: ${finalPrice} VNĐ", Toast.LENGTH_SHORT).show()
-            finish()
+            finish() // Quay lại màn hình chính
         } else {
-            Toast.makeText(this, "Lỗi cập nhật Database!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Lỗi cập nhật dữ liệu!", Toast.LENGTH_SHORT).show()
         }
     }
+    // endregion
 }

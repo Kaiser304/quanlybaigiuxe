@@ -95,7 +95,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.cardXeRa.setOnClickListener {
-            showInputPlateDialog()
+            // Mở thẳng màn hình Lấy xe để quét camera luôn
+            val intent = Intent(this, LayxeActivity::class.java)
+            startActivity(intent)
         }
 
         binding.cardDanhSach.setOnClickListener {
@@ -181,7 +183,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvOtoStatus.setTextColor(if (availableOto < 5) android.graphics.Color.RED else android.graphics.Color.parseColor("#FFEB3B"))
     }
      //HIỆN RA BẢNG NHẬP BỂN SỐ XE CẦN LẤY
-    private fun showInputPlateDialog() {
+   /* private fun showInputPlateDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Nhập biển số xe cần lấy")
 
@@ -202,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         builder.setNegativeButton("Hủy") { dialog, _ -> dialog.cancel() }
         builder.show()
     }
-
+*/
 //    private fun openFeature(title: String) {
 //        val intent = Intent(this, FeatureActivity::class.java)
 //        intent.putExtra("title", title)

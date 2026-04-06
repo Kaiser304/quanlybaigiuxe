@@ -95,29 +95,51 @@ class VehicleInActivity : AppCompatActivity() {
         binding.viewFinder.visibility = View.GONE // Ẩn camera sau khi quét xong
     }
 
+    // 1. Khai báo recognizer ở mức Class để dùng lại, tránh khởi tạo liên tục
+    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
     @OptIn(ExperimentalGetImage::class)
     private fun processImageProxy(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    for (block in visionText.textBlocks) {
-                        val textRaw = block.text.uppercase().replace(" ", "").replace("-", "").replace(".", "")
+                    // Log để bạn kiểm tra trong Logcat xem máy đang thấy chữ gì
+                    Log.d("OCR_Debug", "Detected text: ${visionText.text}")
 
-                        // Regex bóc tách biển số Việt Nam (VD: 67K112345)
-                        val regex = Regex("[0-9]{2}[A-Z][0-9]{1,2}[0-9]{4,5}")
+                    for (block in visionText.textBlocks) {
+                        // Xử lý chuỗi: Viết hoa, xóa khoảng cách, xuống dòng và ký tự đặc biệt
+                        val textRaw = block.text.uppercase()
+                            .replace(Regex("[^A-Z0-9]"), "") // Xóa mọi thứ không phải chữ và số
+
+                        // Regex linh hoạt hơn cho biển số VN:
+                        // 2 số đầu - 1 hoặc 2 chữ cái - dãy số sau
+                        val regex = Regex("[0-9]{2}[A-Z]{1,2}[0-9]{4,6}")
+
                         if (regex.containsMatchIn(textRaw)) {
                             val plate = regex.find(textRaw)?.value ?: ""
-                            binding.edtBienSo.setText(plate)
-                            stopCamera()
+
+                            // 2. PHẢI dùng runOnUiThread để cập nhật giao diện
+                            runOnUiThread {
+                                binding.edtBienSo.setText(plate)
+                                Toast.makeText(this, "Đã nhận diện: $plate", Toast.LENGTH_SHORT).show()
+                                stopCamera()
+                            }
                             break
                         }
                     }
                 }
-                .addOnCompleteListener { imageProxy.close() }
+                .addOnFailureListener { e ->
+                    Log.e("OCR_Error", "Lỗi nhận diện: ${e.message}")
+                }
+                .addOnCompleteListener {
+                    // 3. Luôn đóng imageProxy để CameraX gửi khung hình tiếp theo
+                    imageProxy.close()
+                }
+        } else {
+            imageProxy.close()
         }
     }
 
