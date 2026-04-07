@@ -2,14 +2,17 @@ package com.example.quanlybaigiuxe1
 
 import android.database.Cursor
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
-import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.SearchView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
@@ -41,7 +44,7 @@ class DanhSachXeActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         xeAdapter = XeAdapter(danhSachGoc) { xeCanSua ->
-            showEditDialog(xeCanSua)
+            showCustomEditDialog(xeCanSua)
         }
 
         recyclerView.adapter = xeAdapter
@@ -88,7 +91,12 @@ class DanhSachXeActivity : AppCompatActivity() {
                 val loaiXe = cursor.getString(cursor.getColumnIndexOrThrow("type")) ?: "Không rõ"
                 val gioVao = cursor.getString(cursor.getColumnIndexOrThrow("time_in")) ?: ""
 
-                val hinhAnh = ""
+                // Lấy đường dẫn ảnh nếu nhóm mày có lưu
+                val hinhAnh = try {
+                    cursor.getString(cursor.getColumnIndexOrThrow("image_path")) ?: ""
+                } catch (e: Exception) {
+                    ""
+                }
 
                 danhSachGoc.add(Xe(id, bienSo, loaiXe, gioVao, hinhAnh))
             } while (cursor.moveToNext())
@@ -106,39 +114,45 @@ class DanhSachXeActivity : AppCompatActivity() {
         }
     }
 
-    private fun showEditDialog(xe: Xe) {
+    // Hàm gọi cái bảng Custom màu cam lên
+    private fun showCustomEditDialog(xe: Xe) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_xe_custom, null)
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Sửa thông tin xe")
+        builder.setView(dialogView)
 
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 20, 50, 20)
+        val dialog = builder.create()
+        // Dòng này làm cho cái viền vuông màu trắng mờ đi, chỉ chừa lại cái bảng bo tròn của mày
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        val inputBienSo = EditText(this)
+        val inputBienSo = dialogView.findViewById<EditText>(R.id.inputBienSoCustom)
+        val rbXeMay = dialogView.findViewById<RadioButton>(R.id.rbXeMayCustom)
+        val rbOto = dialogView.findViewById<RadioButton>(R.id.rbOtoCustom)
+        val btnConfirmEdit = dialogView.findViewById<AppCompatButton>(R.id.btnConfirmEditCustom)
+
+        // Hiện thông tin cũ lên bảng
         inputBienSo.setText(xe.bienSo)
-        layout.addView(inputBienSo)
+        if (xe.loaiXe.equals("Ô tô", ignoreCase = true)) {
+            rbOto.isChecked = true
+        } else {
+            rbXeMay.isChecked = true
+        }
 
-        val inputLoaiXe = EditText(this)
-        inputLoaiXe.setText(xe.loaiXe)
-        layout.addView(inputLoaiXe)
-
-        builder.setView(layout)
-
-        builder.setPositiveButton("Lưu") { _, _ ->
+        // Bấm xác nhận sửa
+        btnConfirmEdit.setOnClickListener {
             val bienSoMoi = inputBienSo.text.toString().trim()
-            val loaiXeMoi = inputLoaiXe.text.toString().trim()
+            val loaiXeMoi = if (rbOto.isChecked) "Ô tô" else "Xe máy"
 
-            if (bienSoMoi.isNotEmpty() && loaiXeMoi.isNotEmpty()) {
+            if (bienSoMoi.isNotEmpty()) {
                 val db = dbHelper.writableDatabase
                 db.execSQL("UPDATE Ticket SET plate = ?, type = ? WHERE id = ?", arrayOf(bienSoMoi, loaiXeMoi, xe.id))
-                Toast.makeText(this, "Đã cập nhật!", Toast.LENGTH_SHORT).show()
-                loadDanhSachXe()
+                Toast.makeText(this, "Đã cập nhật thành công!", Toast.LENGTH_SHORT).show()
+                loadDanhSachXe() // Load lại danh sách
+                dialog.dismiss() // Tắt cái bảng đi
             } else {
-                Toast.makeText(this, "Không được để trống!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Không được để trống biển số!", Toast.LENGTH_SHORT).show()
             }
         }
-        builder.setNegativeButton("Hủy") { dialog, _ -> dialog.cancel() }
 
-        builder.show()
+        dialog.show()
     }
 }
