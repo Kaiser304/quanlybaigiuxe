@@ -4,18 +4,23 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide // Import chuẩn của Glide
 
-class XeAdapter(private var danhSachXe: List<Xe>) : RecyclerView.Adapter<XeAdapter.XeViewHolder>() {
+class XeAdapter(
+    private var danhSachXe: List<Xe>,
+    private val onEditClick: (Xe) -> Unit
+) : RecyclerView.Adapter<XeAdapter.XeViewHolder>() {
 
     class XeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvBienSo: TextView = itemView.findViewById(R.id.tvBienSo)
         val tvLoaiXe: TextView = itemView.findViewById(R.id.tvLoaiXe)
         val tvGioVao: TextView = itemView.findViewById(R.id.tvGioVao)
         val imgXeChup: ImageView = itemView.findViewById(R.id.imgXeChup)
+        val btnEditXe: ImageButton = itemView.findViewById(R.id.btnEditXe)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): XeViewHolder {
@@ -53,6 +58,10 @@ class XeAdapter(private var danhSachXe: List<Xe>) : RecyclerView.Adapter<XeAdapt
             intent.putExtra("GIO_VAO", xe.gioVao)
             intent.putExtra("HINH_ANH", xe.hinhAnh)
             context.startActivity(intent)
+        }
+
+        holder.btnEditXe.setOnClickListener {
+            onEditClick(xe)
         }
     }
 

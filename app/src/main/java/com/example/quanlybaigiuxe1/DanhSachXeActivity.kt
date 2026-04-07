@@ -3,8 +3,12 @@ package com.example.quanlybaigiuxe1
 import android.database.Cursor
 import android.os.Bundle
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.SearchView
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -35,7 +39,11 @@ class DanhSachXeActivity : AppCompatActivity() {
         dbHelper = DatabaseHelper(this)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
-        xeAdapter = XeAdapter(danhSachGoc)
+
+        xeAdapter = XeAdapter(danhSachGoc) { xeCanSua ->
+            showEditDialog(xeCanSua)
+        }
+
         recyclerView.adapter = xeAdapter
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -71,18 +79,15 @@ class DanhSachXeActivity : AppCompatActivity() {
         danhSachGoc.clear()
         val db = dbHelper.readableDatabase
 
-        // Truy vấn bảng Ticket
         val cursor: Cursor = db.rawQuery("SELECT * FROM Ticket WHERE status = 1", null)
 
         if (cursor.moveToFirst()) {
             do {
-                // Lấy ID cột an toàn bằng getColumnIndex
                 val id = cursor.getInt(cursor.getColumnIndexOrThrow("id"))
                 val bienSo = cursor.getString(cursor.getColumnIndexOrThrow("plate")) ?: ""
                 val loaiXe = cursor.getString(cursor.getColumnIndexOrThrow("type")) ?: "Không rõ"
                 val gioVao = cursor.getString(cursor.getColumnIndexOrThrow("time_in")) ?: ""
 
-                // Vì Database chưa có cột ảnh, ta để trống hoặc dùng ảnh mặc định
                 val hinhAnh = ""
 
                 danhSachGoc.add(Xe(id, bienSo, loaiXe, gioVao, hinhAnh))
@@ -92,7 +97,6 @@ class DanhSachXeActivity : AppCompatActivity() {
 
         xeAdapter.updateData(danhSachGoc)
 
-        // Hiển thị thông báo nếu bãi trống
         if (danhSachGoc.isEmpty()) {
             tvKhongCoXe.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -100,5 +104,41 @@ class DanhSachXeActivity : AppCompatActivity() {
             tvKhongCoXe.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         }
+    }
+
+    private fun showEditDialog(xe: Xe) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Sửa thông tin xe")
+
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(50, 20, 50, 20)
+
+        val inputBienSo = EditText(this)
+        inputBienSo.setText(xe.bienSo)
+        layout.addView(inputBienSo)
+
+        val inputLoaiXe = EditText(this)
+        inputLoaiXe.setText(xe.loaiXe)
+        layout.addView(inputLoaiXe)
+
+        builder.setView(layout)
+
+        builder.setPositiveButton("Lưu") { _, _ ->
+            val bienSoMoi = inputBienSo.text.toString().trim()
+            val loaiXeMoi = inputLoaiXe.text.toString().trim()
+
+            if (bienSoMoi.isNotEmpty() && loaiXeMoi.isNotEmpty()) {
+                val db = dbHelper.writableDatabase
+                db.execSQL("UPDATE Ticket SET plate = ?, type = ? WHERE id = ?", arrayOf(bienSoMoi, loaiXeMoi, xe.id))
+                Toast.makeText(this, "Đã cập nhật!", Toast.LENGTH_SHORT).show()
+                loadDanhSachXe()
+            } else {
+                Toast.makeText(this, "Không được để trống!", Toast.LENGTH_SHORT).show()
+            }
+        }
+        builder.setNegativeButton("Hủy") { dialog, _ -> dialog.cancel() }
+
+        builder.show()
     }
 }
