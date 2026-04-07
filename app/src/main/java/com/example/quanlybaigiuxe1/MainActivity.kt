@@ -89,16 +89,22 @@ class MainActivity : AppCompatActivity() {
         // ---------------------------------------------
 
         // --- CÁC SỰ KIỆN CLICK ---
+        // Trong MainActivity.kt
+
+// 1. Nút Gửi xe (Mở màn hình quét tự động vào)
+        // Giả sử đây là nút bấm mở màn hình Quét Vào
         binding.cardXeVao.setOnClickListener {
-            val intent = Intent(this, VehicleInActivity::class.java)
+            val intent = Intent(this, VehicleInActivity::class.java) // Dòng 96
             startActivity(intent)
         }
 
+// 2. Nút Lấy xe (Mở màn hình quét tự động ra)
         binding.cardXeRa.setOnClickListener {
-            // Mở thẳng màn hình Lấy xe để quét camera luôn
-            val intent = Intent(this, LayxeActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, LayxeActivity::class.java))
         }
+
+// 3. XÓA BỎ hoàn toàn các đoạn code liên quan đến showInputPlateDialog
+// (vì bạn đã dùng quét tự động rồi mà!)
 
         binding.cardDanhSach.setOnClickListener {
             val intent = Intent(this, DanhSachXeActivity::class.java)

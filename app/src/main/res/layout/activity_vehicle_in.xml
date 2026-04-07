@@ -4,16 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FD">
+    android:background="#FFF5F0">
 
     <LinearLayout
         android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:background="@drawable/header_background"
+        android:layout_height="250dp"
+        android:background="@drawable/header_gradient_orange"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:paddingTop="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="55dp"
         app:layout_constraintTop_toTopOf="parent">
 
         <FrameLayout
@@ -21,24 +22,26 @@
             android:layout_height="wrap_content">
             <ImageView
                 android:id="@+id/btnBack"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_margin="16dp"
-                android:src="@drawable/ic_back"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:layout_margin="12dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_arrow_back"
                 app:tint="#FFFFFF" />
         </FrameLayout>
 
         <ImageView
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:src="@android:drawable/ic_input_add"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:src="@drawable/ic_directions_car"
             app:tint="#FFFFFF" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="GỬI XE"
+            android:letterSpacing="0.1"
+            android:text="GỬI XE HÀNH KHÁCH"
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -48,79 +51,91 @@
         android:id="@+id/cardMain"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="25dp"
-        app:cardCornerRadius="15dp"
-        app:cardElevation="10dp"
-        app:layout_constraintTop_toBottomOf="@id/header"
-        android:layout_marginTop="-50dp">
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="-50dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="12dp"
+        app:layout_constraintTop_toBottomOf="@id/header">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="24dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:orientation="horizontal"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_input_orange"
                 android:gravity="center_vertical"
-                android:background="@android:drawable/editbox_background"
-                android:paddingEnd="8dp">
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_badge"
+                    app:tint="#FF7043" />
 
                 <EditText
                     android:id="@+id/edtBienSo"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:hint="Nhập biển số xe"
-                    android:drawableStart="@android:drawable/ic_menu_edit"
-                    android:drawablePadding="10dp"
+                    android:layout_marginStart="12dp"
                     android:background="@android:color/transparent"
-                    android:padding="12dp"
-                    android:singleLine="true" />
+                    android:hint="Nhập biển số xe..."
+                    android:textColorHint="#BCBCBC"
+                    android:singleLine="true"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
 
                 <ImageButton
                     android:id="@+id/btnScan"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:src="@android:drawable/ic_menu_camera"
+                    android:src="@drawable/ic_qr_code_scanner"
                     android:background="?android:attr/selectableItemBackgroundBorderless"
-                    app:tint="#66B2FF" />
+                    app:tint="#FF7043" />
             </LinearLayout>
 
             <RadioGroup
                 android:id="@+id/rgLoaiXe"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:orientation="horizontal"
-                android:gravity="center">
+                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <RadioButton
                     android:id="@+id/rbXeMay"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Xe máy"
+                    android:layout_marginEnd="40dp"
                     android:checked="true"
-                    android:layout_marginEnd="20dp" />
+                    android:buttonTint="#FF7043"
+                    android:text="Xe máy"
+                    android:textSize="16sp" />
 
                 <RadioButton
                     android:id="@+id/rbOto"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Ô tô" />
+                    android:buttonTint="#FF7043"
+                    android:text="Ô tô"
+                    android:textSize="16sp" />
             </RadioGroup>
 
             <TextView
                 android:id="@+id/txtTimeIn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
+                android:layout_marginTop="16dp"
                 android:gravity="center"
-                android:text="Thời gian: 00:00:00 01/01/2024"
-                android:textColor="#888888"
-                android:textStyle="italic" />
+                android:text="🕒 00:00:00 - 01/01/2026"
+                android:textColor="#FF7043"
+                android:textSize="14sp"
+                android:textStyle="bold|italic" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
@@ -129,29 +144,44 @@
         android:id="@+id/cardCamera"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="25dp"
-        app:cardCornerRadius="15dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginVertical="16dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="4dp"
         app:layout_constraintTop_toBottomOf="@id/cardMain"
         app:layout_constraintBottom_toTopOf="@id/btnLuu">
 
-        <androidx.camera.view.PreviewView
-            android:id="@+id/viewFinder"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            android:layout_height="match_parent">
+
+            <androidx.camera.view.PreviewView
+                android:id="@+id/viewFinder"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#212121" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="40dp"
+                android:background="@drawable/camera_frame_orange" />
+        </FrameLayout>
     </androidx.cardview.widget.CardView>
 
     <Button
         android:id="@+id/btnLuu"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_margin="25dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
         android:text="XÁC NHẬN GỬI XE"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:backgroundTint="#66B2FF"
-        app:cornerRadius="30dp"
+        android:elevation="8dp"
+        android:backgroundTint="#FF7043"
+        app:cornerRadius="16dp"
         app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

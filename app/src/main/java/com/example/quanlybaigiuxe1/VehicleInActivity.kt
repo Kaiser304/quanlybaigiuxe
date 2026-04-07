@@ -1,14 +1,16 @@
 package com.example.quanlybaigiuxe1
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.quanlybaigiuxe1.databinding.ActivityVehicleInBinding
 import com.google.mlkit.vision.common.InputImage
@@ -20,55 +22,47 @@ import java.util.*
 class VehicleInActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityVehicleInBinding
-    private lateinit var db: DatabaseHelper // Đã đổi tên 'db' cho gọn nhưng vẫn giữ logic khởi tạo
+    private lateinit var db: DatabaseHelper
+    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val CAMERA_PERMISSION_CODE = 101
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-
         binding = ActivityVehicleInBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        db = DatabaseHelper(this) // Khởi tạo để hết lỗi Unresolved reference 'db'
-
+        db = DatabaseHelper(this)
         updateTimeDisplay()
 
-        // Sự kiện quay lại
+        // 1. Kiểm tra quyền và tự động bật camera ngay lập tức
+        if (checkPermission()) {
+            startCamera()
+        } else {
+            requestPermission()
+        }
+
         binding.btnBack.setOnClickListener { finish() }
 
-        // Sự kiện bấm nút Quét biển số
         binding.btnScan.setOnClickListener {
-            startCamera()
+            startCamera() // Cho phép khởi động lại nếu có lag
+            Toast.makeText(this, "Đang khởi động lại Camera...", Toast.LENGTH_SHORT).show()
         }
 
-        // Sự kiện Lưu dữ liệu
-        binding.btnLuu.setOnClickListener {
-            saveVehicleData()
-        }
-
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
-            != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-
-            // Nếu chưa có quyền, thì yêu cầu người dùng cấp quyền
-            androidx.core.app.ActivityCompat.requestPermissions(
-                this, arrayOf(android.Manifest.permission.CAMERA), 101
-            )
-        }
-    }
-
-    private fun updateTimeDisplay() {
-        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-        binding.txtTimeIn.text = "Thời gian vào: $currentTime"
+        binding.btnLuu.setOnClickListener { saveVehicleData() }
     }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
+
+            // Thiết lập Preview
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(binding.viewFinder.surfaceProvider)
             }
 
+            // Thiết lập Bộ phân tích hình ảnh (OCR)
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
@@ -81,85 +75,73 @@ class VehicleInActivity : AppCompatActivity() {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalyzer)
-                binding.viewFinder.visibility = View.VISIBLE // Hiện khung camera đã thêm trong XML
             } catch (e: Exception) {
-                Log.e("CameraX", "Lỗi: ${e.message}")
+                Log.e("CameraX", "Không thể khởi động camera: ${e.message}")
             }
         }, ContextCompat.getMainExecutor(this))
     }
-
-    private fun stopCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        val cameraProvider = cameraProviderFuture.get()
-        cameraProvider.unbindAll()
-        binding.viewFinder.visibility = View.GONE // Ẩn camera sau khi quét xong
-    }
-
-    // 1. Khai báo recognizer ở mức Class để dùng lại, tránh khởi tạo liên tục
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     @OptIn(ExperimentalGetImage::class)
     private fun processImageProxy(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
         if (mediaImage != null) {
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
             recognizer.process(image)
                 .addOnSuccessListener { visionText ->
-                    // Log để bạn kiểm tra trong Logcat xem máy đang thấy chữ gì
-                    Log.d("OCR_Debug", "Detected text: ${visionText.text}")
-
                     for (block in visionText.textBlocks) {
-                        // Xử lý chuỗi: Viết hoa, xóa khoảng cách, xuống dòng và ký tự đặc biệt
-                        val textRaw = block.text.uppercase()
-                            .replace(Regex("[^A-Z0-9]"), "") // Xóa mọi thứ không phải chữ và số
-
-                        // Regex linh hoạt hơn cho biển số VN:
-                        // 2 số đầu - 1 hoặc 2 chữ cái - dãy số sau
+                        val textRaw = block.text.uppercase().replace(Regex("[^A-Z0-9]"), "")
                         val regex = Regex("[0-9]{2}[A-Z]{1,2}[0-9]{4,6}")
 
                         if (regex.containsMatchIn(textRaw)) {
                             val plate = regex.find(textRaw)?.value ?: ""
-
-                            // 2. PHẢI dùng runOnUiThread để cập nhật giao diện
                             runOnUiThread {
-                                binding.edtBienSo.setText(plate)
-                                Toast.makeText(this, "Đã nhận diện: $plate", Toast.LENGTH_SHORT).show()
-                                stopCamera()
+                                // Chỉ cập nhật nếu biển số mới khác biển số cũ để tránh nháy màn hình
+                                if (binding.edtBienSo.text.toString() != plate) {
+                                    binding.edtBienSo.setText(plate)
+                                }
                             }
-                            break
+                            // Không gọi stopCamera() để camera luôn trong tư thế sẵn sàng
                         }
                     }
                 }
-                .addOnFailureListener { e ->
-                    Log.e("OCR_Error", "Lỗi nhận diện: ${e.message}")
-                }
-                .addOnCompleteListener {
-                    // 3. Luôn đóng imageProxy để CameraX gửi khung hình tiếp theo
-                    imageProxy.close()
-                }
+                .addOnCompleteListener { imageProxy.close() }
         } else {
             imageProxy.close()
         }
     }
 
+    // --- CÁC HÀM HỖ TRỢ ---
+
+    private fun checkPermission() = ContextCompat.checkSelfPermission(
+        this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
+    private fun requestPermission() {
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAMERA_PERMISSION_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        }
+    }
+
+    private fun updateTimeDisplay() {
+        val currentTime = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
+        binding.txtTimeIn.text = "Thời gian vào: $currentTime"
+    }
+
     private fun saveVehicleData() {
         val plate = binding.edtBienSo.text.toString().trim()
         val type = if (binding.rbXeMay.isChecked) "Xe máy" else "Ô tô"
-
         if (plate.isEmpty()) {
-            Toast.makeText(this, "Vui lòng nhập hoặc quét biển số", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Chưa nhận diện được biển số!", Toast.LENGTH_SHORT).show()
             return
         }
-
         val timeIn = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-        val result = db.insertVehicle(plate, type, timeIn, "IN")
-
-        if (result != -1L) {
-            Toast.makeText(this, "Gửi xe thành công!", Toast.LENGTH_SHORT).show()
+        if (db.insertVehicle(plate, type, timeIn, "IN") != -1L) {
+            Toast.makeText(this, "Đã lưu xe: $plate", Toast.LENGTH_SHORT).show()
             finish()
-        } else {
-            Toast.makeText(this, "Lỗi lưu dữ liệu!", Toast.LENGTH_SHORT).show()
         }
     }
 }
